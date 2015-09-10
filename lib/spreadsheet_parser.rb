@@ -13,22 +13,19 @@ class SpreadsheetParser < Struct.new(:filename)
     @columns ||= parse_columns
   end
 
+  def columns_with_mappings
+    columns.reject{|col, config| config[:index].nil? }
+  end
+
+  def rows
+    @rows
+  end
+
   def parse
-    rows = []
-    row_index = 2
+    @rows = []
 
-    loop do
-      row = []
-
-      columns.each_with_index do |column, index|
-        data = xls.cell(row_index, index + 1)
-        row << data
-      end
-
-      break if row.compact.empty?
-
-      rows << row
-      row_index += 1
+    xls.each_row_streaming(offset: 1) do |row|
+      @rows << row.map{|col| col.value}
     end
 
     self
@@ -43,13 +40,20 @@ class SpreadsheetParser < Struct.new(:filename)
   end
 
   def parse_columns
-    column_names = []
+    column_names = {}
 
     loop do
       column_name = xls.cell(1, column_names.size + 1)
       break if column_name.nil?
 
-      column_names << column_name
+      column_type = xls.cell(2, column_names.size + 1)
+      column_data = xls.cell(3, column_names.size + 1)
+
+      col_info = {}
+      col_info[:type] = column_data.class.to_s.downcase
+      col_info[:index] = "not_analyzed" unless column_type.nil?
+
+      column_names[column_name] = col_info
     end
     column_names
   end
