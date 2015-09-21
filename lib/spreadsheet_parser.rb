@@ -24,7 +24,7 @@ class SpreadsheetParser < Struct.new(:filename)
   def parse
     @rows = []
 
-    xls.each_row_streaming(offset: 1) do |row|
+    xls.each_row_streaming(offset: 2) do |row|
       @rows << row.map{|col| col.value}
     end
 
