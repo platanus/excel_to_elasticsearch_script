@@ -34,6 +34,7 @@ GEM
       rspec-support (~> 3.3.0)
     rspec-support (3.3.0)
     rubyzip (1.1.7)
+    thor (0.19.1)
 
 PLATFORMS
   ruby
@@ -42,6 +43,7 @@ DEPENDENCIES
   elasticsearch
   roo
   rspec
+  thor
 
 BUNDLED WITH
    1.10.6
