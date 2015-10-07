@@ -2,6 +2,7 @@ class ElasticUploader
   attr_reader :filename, :config
 
   def initialize(filename, config_file)
+    @bulk = []
     @filename = filename
     @config = ElasticConfig.new(config_file)
   end
@@ -26,9 +27,8 @@ class ElasticUploader
 
     create_index unless client.indices.exists? index: config.index
 
-    @bulk = []
-    @book.rows.each { |row| add_to_index row }
-    client.bulk body: @bulk
+    @book.rows.each { |row| queue_insertion row }
+    send_to_es if @bulk.length > 0
   end
 
   def row_to_bulk(row)
@@ -37,8 +37,17 @@ class ElasticUploader
     data
   end
 
-  def add_to_index(row)
+  def queue_insertion(row)
     @bulk << { index: { _index: config.index, _type: config.type } }
     @bulk << row_to_bulk(row)
+    send_to_es if (@bulk.length / 2) > config.bulk_size
+  end
+
+  def send_to_es
+    if @bulk.length > 0
+      puts "Sending #{@bulk.length / 2} records to ES"
+      client.bulk body: @bulk
+      @bulk = []
+    end
   end
 end

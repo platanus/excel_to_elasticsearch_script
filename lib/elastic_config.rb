@@ -10,7 +10,7 @@ class ElasticConfig
   end
 
   def bulk_size
-    @config["bulk_size"]
+    @config.fetch("bulk_size", 1000)
   end
 
   def index
