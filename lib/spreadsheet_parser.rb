@@ -1,8 +1,13 @@
 require "roo"
-class SpreadsheetParser < Struct.new(:filename)
+class SpreadsheetParser
+  attr_reader :filename
+
+  def initialize(filename)
+    @filename = filename
+  end
 
   def self.open(filename)
-    new(filename).parse
+    new(filename)
   end
 
   def xls
@@ -13,22 +18,17 @@ class SpreadsheetParser < Struct.new(:filename)
     @columns ||= parse_columns
   end
 
-  def columns_with_mappings
-    columns.reject{|col, config| config[:index].nil? }
-  end
-
   def rows
-    @rows
+    @rows ||= parse
   end
 
   def parse
     @rows = []
 
-    xls.each_row_streaming(offset: 2) do |row|
-      @rows << row.map{|col| col.value}
+    xls.each_row_streaming(offset: 1) do |row|
+      @rows << row.map(&:value)
     end
-
-    self
+    @rows
   end
 
   private
@@ -46,16 +46,13 @@ class SpreadsheetParser < Struct.new(:filename)
       column_name = xls.cell(1, column_names.size + 1)
       break if column_name.nil?
 
-      column_type = xls.cell(2, column_names.size + 1)
-      column_data = xls.cell(3, column_names.size + 1)
+      column_data = xls.cell(2, column_names.size + 1)
 
       col_info = {}
       col_info[:type] = column_data.class.to_s.downcase
-      col_info[:index] = "not_analyzed" unless column_type.nil?
 
       column_names[column_name] = col_info
     end
     column_names
   end
-
 end

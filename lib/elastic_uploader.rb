@@ -10,6 +10,7 @@ class ElasticUploader
 
   def run
     @book = SpreadsheetParser.open(filename)
+    @book.parse
 
     client = Elasticsearch::Client.new host: url, log: true
 
