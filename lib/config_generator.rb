@@ -10,8 +10,10 @@ class ConfigGenerator
   def generate
     config = {
       "index" => "",
+      "url" => "",
+      "type" => "",
       "bulk_size" => 100,
-      "config" => @book.columns.deep_stringify_keys
+      "columns" => @book.columns.deep_stringify_keys
     }
     File.open(output_file, "w") do |file|
       file.write config.to_yaml

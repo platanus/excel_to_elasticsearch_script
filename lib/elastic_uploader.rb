@@ -1,32 +1,33 @@
 class ElasticUploader
-  attr_reader :filename, :url, :index, :type
+  attr_reader :filename, :config
 
-  def initialize(filename, url, index, type)
+  def initialize(filename, config_file)
     @filename = filename
-    @url = url
-    @index = index
-    @type = type
+    @config = ElasticConfig.new(config_file)
+  end
+
+  def client
+    @client ||= Elasticsearch::Client.new host: config.url, log: true
+  end
+
+  def create_index
+    body = {
+      mappings: {
+        config.type => {
+          properties: config.columns_with_mappings
+        }
+      }
+    }
+    client.indices.create index: config.index, body: body
   end
 
   def run
     @book = SpreadsheetParser.open(filename)
-    @book.parse
 
-    client = Elasticsearch::Client.new host: url, log: true
-
-    unless client.indices.exists? index: index
-      body = {
-        mappings: {
-          type => {
-            properties: @book.columns_with_mappings
-          }
-        }
-      }
-      client.indices.create index: index, body: body
-    end
+    create_index unless client.indices.exists? index: config.index
 
     @bulk = []
-    @book.rows.each { |row| add_to_index row, index, type }
+    @book.rows.each { |row| add_to_index row }
     client.bulk body: @bulk
   end
 
@@ -36,8 +37,8 @@ class ElasticUploader
     data
   end
 
-  def add_to_index(row, index, type)
-    @bulk << { index: { _index: index, _type: type } }
+  def add_to_index(row)
+    @bulk << { index: { _index: config.index, _type: config.type } }
     @bulk << row_to_bulk(row)
   end
 end

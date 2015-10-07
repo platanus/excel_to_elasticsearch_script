@@ -1,8 +1,8 @@
 require "thor"
 class CLI < Thor
-  desc "upload filename url index type", "Sube un archivo a elastic search"
-  def upload(filename, url, index, type)
-    ElasticUploader.new(filename, url, index, type).run
+  desc "upload excel_file config_file", "Sube un archivo a elastic search"
+  def upload(excel_file, config_file)
+    ElasticUploader.new(excel_file, config_file).run
   end
 
   desc "generate_config excel_file output_file", "Genera un archivo de configuracion para un XLS"
