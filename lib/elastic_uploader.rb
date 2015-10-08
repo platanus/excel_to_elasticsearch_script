@@ -1,14 +1,46 @@
 class ElasticUploader
-  attr_reader :filename, :config
+  attr_reader :filename, :config, :regenerate, :verbose
 
-  def initialize(filename, config_file)
+  def initialize(filename, config_file, regenerate, verbose)
     @bulk = []
     @filename = filename
+    @regenerate = regenerate
     @config = ElasticConfig.new(config_file)
+    @verbose = verbose
   end
 
   def client
-    @client ||= Elasticsearch::Client.new host: config.url, log: true
+    @client ||= Elasticsearch::Client.new host: config.url, log: verbose
+  end
+
+  def run
+    @book = SpreadsheetParser.open(filename)
+
+    prepare_index
+
+    @book.rows.each { |row| queue_insertion row }
+    send_to_es if @bulk.length > 0
+  end
+
+  def prepare_index
+    if client.indices.exists? index: config.index
+      if regenerate
+        drop_index
+        create_index
+      end
+    else
+      create_index
+    end
+  end
+
+  def row_to_bulk(row)
+    data = {}
+    @book.columns.keys.each_with_index { |col, i| data[col] = row[i] }
+    data
+  end
+
+  def drop_index
+    client.indices.delete index: config.index
   end
 
   def create_index
@@ -20,21 +52,6 @@ class ElasticUploader
       }
     }
     client.indices.create index: config.index, body: body
-  end
-
-  def run
-    @book = SpreadsheetParser.open(filename)
-
-    create_index unless client.indices.exists? index: config.index
-
-    @book.rows.each { |row| queue_insertion row }
-    send_to_es if @bulk.length > 0
-  end
-
-  def row_to_bulk(row)
-    data = {}
-    @book.columns.keys.each_with_index { |col, i| data[col] = row[i] }
-    data
   end
 
   def queue_insertion(row)
