@@ -22,10 +22,16 @@ class SpreadsheetParser
     @rows ||= parse
   end
 
+  def each_row
+    xls.each_row_streaming(offset: 1, pad_cells: true) do |row|
+      yield row.map(&:value)
+    end
+  end
+
   def parse
     @rows = []
 
-    xls.each_row_streaming(offset: 1) do |row|
+    xls.each_row_streaming(offset: 1, pad_cells: true) do |row|
       @rows << row.map(&:value)
     end
     @rows
@@ -34,24 +40,22 @@ class SpreadsheetParser
   private
 
   def load_xls
-    xls = Roo::Spreadsheet.open(filename, extension: :xlsx)
-    xls.default_sheet = xls.sheets.first
+    xls = Roo::Excelx.new(filename)
     xls
   end
 
   def parse_columns
     column_names = {}
+    columns = nil
 
-    loop do
-      column_name = xls.cell(1, column_names.size + 1)
-      break if column_name.nil?
-
-      column_data = xls.cell(2, column_names.size + 1)
-
-      col_info = {}
-      col_info[:type] = column_data.class.to_s.downcase
-
-      column_names[column_name] = col_info
+    xls.each_row_streaming(max_rows: 2, pad_cells: true) do |row|
+      if columns
+        row.each_with_index do |cell, i|
+          column_names[columns[i]] = cell.value.class.to_s.downcase
+        end
+      else
+        columns = row.map(&:value)
+      end
     end
     column_names
   end

@@ -18,7 +18,7 @@ class ElasticUploader
 
     prepare_index
 
-    @book.rows.each { |row| queue_insertion row }
+    @book.each_row { |row| queue_insertion row }
     send_to_es if @bulk.length > 0
   end
 
