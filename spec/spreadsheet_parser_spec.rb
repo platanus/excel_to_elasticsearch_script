@@ -14,4 +14,16 @@ describe SpreadsheetParser do
       expect(book.rows.length).to eq 101
     end
   end
+
+  context "returns the columns" do
+    it "returns a hash of columns" do
+      columns = book.columns
+      expect(columns.size).to eq(21)
+    end
+
+    it "has the current type for the column" do
+      columns = book.columns
+      expect(columns["Sales"]).to eq("float")
+    end
+  end
 end

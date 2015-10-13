@@ -1,0 +1,17 @@
+---
+index: 'pedidos'
+url: 'http://localhost:9200'
+type: 'pedido'
+bulk_size: 30
+columns:
+  Order Date:
+    type: date
+  Sales:
+    type: float
+  Ship Mode:
+    type: string
+    index: not_analyzed
+  Mes:
+    type: string
+    calculated: true
+    formula: self["Order Date"].year
