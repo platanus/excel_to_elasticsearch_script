@@ -1,12 +1,15 @@
 class ElasticUploader
-  attr_reader :filename, :config, :regenerate, :verbose
+  attr_reader :filename, :config, :regenerate, :verbose,
+    :limit, :skip
 
-  def initialize(filename, config_file, regenerate, verbose)
+  def initialize(filename, config_file, options)
     @bulk = []
     @filename = filename
-    @regenerate = regenerate
     @config = ElasticConfig.new(config_file)
-    @verbose = verbose
+    @verbose = options[:verbose]
+    @regenerate = options[:regenerate]
+    @limit = options[:limit]
+    @skip = options[:skip]
   end
 
   def client
@@ -18,7 +21,7 @@ class ElasticUploader
 
     prepare_index
 
-    @book.each_row { |row| queue_insertion row }
+    @book.each_row(limit: limit, skip: skip) { |row| queue_insertion row }
     send_to_es if @bulk.length > 0
   end
 
@@ -65,7 +68,6 @@ class ElasticUploader
 
   def send_to_es
     if @bulk.length > 0
-      puts "Sending #{@bulk.length / 2} records to ES"
       client.bulk body: @bulk
       @bulk = []
     end

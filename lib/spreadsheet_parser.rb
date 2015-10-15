@@ -22,9 +22,29 @@ class SpreadsheetParser
     @rows ||= parse
   end
 
-  def each_row
-    xls.each_row_streaming(offset: 1, pad_cells: true) do |row|
-      yield row.map(&:value)
+  def each_row(args)
+    rerun = true
+    offset = args[:skip] || 1
+    limit = args[:limit]
+    i = offset
+    records_processed = 1
+    while rerun
+      rerun = false
+      load_xls
+      xls.each_row_streaming(offset: offset, pad_cells: true) do |row|
+        print "\r"
+        print "reading row #{i}"
+        yield row.map(&:value)
+        i += 1
+        records_processed += 1
+        break if limit && records_processed > limit
+        if (i % 100000) == 0
+          puts "Reloading XLS"
+          offset = i
+          rerun = true
+          break
+        end
+      end
     end
   end
 
@@ -40,8 +60,12 @@ class SpreadsheetParser
   private
 
   def load_xls
-    xls = Roo::Excelx.new(filename)
-    xls
+    if @xls
+      @xls.close
+      @xls = nil
+      GC.start
+    end
+    @xls = Roo::Excelx.new(filename)
   end
 
   def parse_columns
