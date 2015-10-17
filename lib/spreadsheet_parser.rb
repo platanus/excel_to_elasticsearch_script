@@ -34,7 +34,10 @@ class SpreadsheetParser
       xls.each_row_streaming(offset: offset, pad_cells: true) do |row|
         print "\r"
         print "reading row #{i}"
-        yield row.map(&:value)
+        r = row.map do |cell|
+          cell.value rescue ""
+        end
+        yield r
         i += 1
         records_processed += 1
         break if limit && records_processed > limit
@@ -75,7 +78,7 @@ class SpreadsheetParser
     xls.each_row_streaming(max_rows: 2, pad_cells: true) do |row|
       if columns
         row.each_with_index do |cell, i|
-          column_names[columns[i]] = cell.value.class.to_s.downcase
+          column_names[columns[i]] = cell.value.class.to_s.downcase rescue 'string'
         end
       else
         columns = row.map(&:value)
