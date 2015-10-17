@@ -5,7 +5,7 @@
 ### Generating a configuration
 
 ```ruby
-ruby add_to_index generate_config your_excel.xlsx new_config.yml
+ruby add_to_index.rb generate_config your_excel.xlsx new_config.yml
 ```
 
 Example configuration file:
