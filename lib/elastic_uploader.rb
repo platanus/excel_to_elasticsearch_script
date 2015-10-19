@@ -10,6 +10,7 @@ class ElasticUploader
     @regenerate = options[:regenerate]
     @limit = options[:limit]
     @skip = options[:skip]
+    @processed = false
   end
 
   def client
@@ -23,6 +24,10 @@ class ElasticUploader
 
     @book.each_row(limit: limit, skip: skip) { |row| queue_insertion row }
     send_to_es if @bulk.length > 0
+
+    # return 1 to know there were no rows processed
+    # probably because doc was empty
+    exit(1) unless @processed
   end
 
   def prepare_index
@@ -61,6 +66,7 @@ class ElasticUploader
   end
 
   def queue_insertion(row)
+    @processed = true unless @processed
     @bulk << { index: { _index: config.index, _type: config.type } }
     @bulk << row_to_bulk(row)
     send_to_es if (@bulk.length / 2) > config.bulk_size
