@@ -14,7 +14,9 @@ class ElasticUploader
   end
 
   def client
-    @client ||= Elasticsearch::Client.new host: config.url, log: verbose
+    @client ||= Elasticsearch::Client.new host: config.url,
+                                          log: verbose,
+                                          request_timeout: 5 * 60
   end
 
   def run
