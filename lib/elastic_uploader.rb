@@ -46,8 +46,9 @@ class ElasticUploader
   def row_to_bulk(row)
     data = {}
     @book.columns.keys.each_with_index { |col, i| data[col] = row[i] }
+    data.select! { |key| config.columns.keys.include? key  }
     config.calculated_columns.each do |col, opts|
-      data[col] = Record.new(row, config).instance_eval(opts["formula"])
+      data[col] = Record.new(row, @book).instance_eval(opts["formula"])
     end
     data
   end

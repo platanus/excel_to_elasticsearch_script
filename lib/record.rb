@@ -1,8 +1,8 @@
 class Record
-  attr_reader :row, :config
-  def initialize(row, config)
+  attr_reader :row, :book
+  def initialize(row, book)
     @row = row
-    @config = config
+    @book = book
   end
 
   def [](index_or_name)
@@ -16,7 +16,7 @@ class Record
   private
 
   def value_by_name(name)
-    index = config.columns.keys.index(name)
+    index = book.columns.keys.index(name)
     raise "Column not found '#{name}'" if index.nil?
     row[index]
   end
